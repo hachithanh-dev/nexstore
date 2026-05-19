@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, User, Search, Menu, Package2, Sun, Moon, Tag, Phone, Info, ChevronDown, Heart } from "lucide-react";
+import { ShoppingCart, User, Search, Menu, Package2, Sun, Moon, Tag, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useSession } from "next-auth/react";
