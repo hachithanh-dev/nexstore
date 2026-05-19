@@ -94,29 +94,31 @@ export default function OrdersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
-      if (!res.ok) throw new Error("Không thể cập nhật đơn hàng");
-      return res.json();
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Không thể cập nhật đơn hàng");
+      return json;
     },
     onSuccess: () => {
       toast.success("Đã cập nhật trạng thái đơn hàng");
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["order", viewOrder] });
     },
-    onError: () => toast.error("Không thể cập nhật đơn hàng"),
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/orders/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Không thể xóa đơn hàng");
-      return res.json();
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Không thể xóa đơn hàng");
+      return json;
     },
     onSuccess: () => {
       toast.success("Đã xóa đơn hàng");
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       setDeleteId(null);
     },
-    onError: () => toast.error("Không thể xóa đơn hàng"),
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const orders = data?.data || [];
