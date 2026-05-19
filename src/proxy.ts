@@ -24,14 +24,17 @@ export function proxy(request: NextRequest) {
   const isLoggedIn = !!token;
   const isPublicRoute = 
     pathname === "/" || 
+    pathname === "/about" ||
+    pathname === "/contact" ||
     pathname === "/login" || 
     pathname === "/register" ||
     pathname === "/cart" ||
+    pathname.startsWith("/products") ||
     pathname.startsWith("/product");
 
   // Redirect logged-in users away from auth pages
   if (isLoggedIn && (pathname === "/login" || pathname === "/register")) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   // Redirect non-logged-in users to login for protected routes
