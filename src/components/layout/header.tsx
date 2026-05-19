@@ -20,24 +20,17 @@ import {
   LogOut,
   User,
   Bell,
-  ExternalLink,
   Store,
 } from "lucide-react";
 import Link from "next/link";
 import { getInitials } from "@/utils/formatters";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
 
 export function Header() {
   const { data: session } = useSession();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const { sidebarOpen, toggleSidebar } = useAppStore();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   return (
     <header
@@ -66,12 +59,12 @@ export function Header() {
       <div className="flex items-center gap-3">
         {/* Theme Toggle */}
         <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-accent hover:text-foreground"
           suppressHydrationWarning
         >
-          {mounted ? (
-            theme === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />
+          {resolvedTheme === "dark" ? (
+            <Sun className="h-[18px] w-[18px]" />
           ) : (
             <Moon className="h-[18px] w-[18px]" />
           )}

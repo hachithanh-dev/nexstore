@@ -5,6 +5,39 @@ import { requireAdmin } from "@/lib/require-admin";
 import { isValidOrderStatus } from "@/lib/constants";
 import { createOrderSchema, paginationSchema } from "@/lib/schemas";
 import { v4 as uuidv4 } from "uuid";
+import type { Prisma } from "@prisma/client";
+
+type OrderLine = {
+  productId: string;
+  quantity: number;
+};
+
+function shouldReserveInventory(status: string) {
+  return status !== "cancelled";
+}
+
+async function reserveInventory(
+  tx: Prisma.TransactionClient,
+  items: OrderLine[],
+  productMap: Map<string, { id: string; name: string }>
+) {
+  for (const item of items) {
+    const updated = await tx.product.updateMany({
+      where: {
+        id: item.productId,
+        stock: { gte: item.quantity },
+      },
+      data: {
+        stock: { decrement: item.quantity },
+      },
+    });
+
+    if (updated.count === 0) {
+      const product = productMap.get(item.productId)!;
+      throw new Error(`Sản phẩm "${product.name}" đã hết hàng`);
+    }
+  }
+}
 
 // GET /api/orders (admin only)
 export async function GET(req: NextRequest) {
@@ -148,21 +181,8 @@ export async function POST(req: NextRequest) {
     const orderNumber = `ORD-${dateStr}-${uniqueId}`;
 
     const order = await prisma.$transaction(async (tx) => {
-      for (const item of items) {
-        const updated = await tx.product.updateMany({
-          where: {
-            id: item.productId,
-            stock: { gte: item.quantity },
-          },
-          data: {
-            stock: { decrement: item.quantity },
-          },
-        });
-
-        if (updated.count === 0) {
-          const product = productMap.get(item.productId)!;
-          throw new Error(`Sản phẩm "${product.name}" đã hết hàng`);
-        }
+      if (shouldReserveInventory(status)) {
+        await reserveInventory(tx, items, productMap);
       }
 
       return tx.order.create({

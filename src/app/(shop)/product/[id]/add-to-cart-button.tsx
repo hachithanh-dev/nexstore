@@ -30,7 +30,6 @@ export function AddToCartButton({ product, disabled }: AddToCartButtonProps) {
 
     addItem({ ...product, quantity });
     setAdded(true);
-    toast.success(`Đã thêm ${product.name} vào giỏ hàng!`);
     setTimeout(() => setAdded(false), 2000);
   };
 
@@ -55,11 +54,17 @@ export function AddToCartButton({ product, disabled }: AddToCartButtonProps) {
           size="icon"
           className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent"
           onClick={() => setQuantity(quantity + 1)}
-          disabled={disabled}
+          disabled={disabled || quantity >= product.stock}
         >
           <Plus className="h-4 w-4" />
         </Button>
       </div>
+
+      {!disabled && product.stock > 0 && (
+        <p className="text-xs text-muted-foreground sm:hidden">
+          Tối đa {product.stock} sản phẩm
+        </p>
+      )}
 
       {/* Add to Cart CTA */}
       <Button

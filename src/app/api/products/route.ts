@@ -21,6 +21,10 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status") || "";
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
+    const ids = (searchParams.get("ids") || "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
 
     // Validated pagination
     const { page, pageSize } = paginationSchema.parse({
@@ -37,6 +41,10 @@ export async function GET(req: NextRequest) {
     // Build where clause
     const where: Record<string, unknown> = {};
 
+    if (ids.length > 0) {
+      where.id = { in: ids };
+    }
+
     if (search) {
       where.OR = [
         { name: { contains: search } },
@@ -52,6 +60,8 @@ export async function GET(req: NextRequest) {
         }
         where.status = status;
       }
+    } else if (ids.length === 0) {
+      where.status = "active";
     } else {
       where.status = "active";
     }
