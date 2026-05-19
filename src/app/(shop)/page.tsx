@@ -3,9 +3,9 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import {
-  ShoppingCart, ArrowRight, Sparkles, Truck, ShieldCheck, Headphones,
-  Star, Zap, Award, Users, Clock, Laptop, Smartphone, Headphones as HeadphonesIcon,
-  Watch, Monitor, Gamepad2, Quote,
+  ShoppingCart, ArrowRight, Sparkles, Truck, ShieldCheck,
+  Star, Zap, Award, Users, Laptop, Smartphone, Headphones as HeadphonesIcon,
+  Watch, Monitor, Gamepad2,
 } from "lucide-react";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { TestimonialCarousel } from "@/components/testimonial-carousel";
@@ -295,15 +295,6 @@ function SectionHeader({ badge, title, subtitle, action }: { badge: string; titl
         <p className="text-muted-foreground mt-2 max-w-lg">{subtitle}</p>
       </div>
       {action && <div className="shrink-0">{action}</div>}
-    </div>
-  );
-}
-
-function FeatureStrip({ icon, text }: { icon: React.ReactNode; text: string }) {
-  return (
-    <div className="flex items-center justify-center gap-3 py-2 text-sm text-muted-foreground">
-      <span className="text-primary">{icon}</span>
-      <span className="font-medium">{text}</span>
     </div>
   );
 }
