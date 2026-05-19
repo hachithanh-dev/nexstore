@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Plus, Minus, Check } from "lucide-react";
 import { useCart, CartItem } from "@/hooks/use-cart";
-import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -30,7 +29,6 @@ export function AddToCartButton({ product, disabled }: AddToCartButtonProps) {
 
     addItem({ ...product, quantity });
     setAdded(true);
-    toast.success(`Đã thêm ${product.name} vào giỏ hàng!`);
     setTimeout(() => setAdded(false), 2000);
   };
 
