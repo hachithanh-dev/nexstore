@@ -19,10 +19,10 @@ import {
   LogOut,
   User,
   Bell,
-  ExternalLink,
   Store,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getInitials } from "@/utils/formatters";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,7 @@ import { useState, useEffect } from "react";
 
 export function Header() {
   const { data: session } = useSession();
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { sidebarOpen, toggleSidebar } = useAppStore();
   const [mounted, setMounted] = useState(false);
@@ -122,11 +123,9 @@ export function Header() {
               <User className="mr-2 h-4 w-4" />
               Hồ sơ
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/">
-                <Store className="mr-2 h-4 w-4" />
-                Quay về trang web
-              </Link>
+            <DropdownMenuItem onClick={() => router.push("/")}>
+              <Store className="mr-2 h-4 w-4" />
+              Quay về trang web
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
