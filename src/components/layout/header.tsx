@@ -121,17 +121,13 @@ export function Header() {
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/profile">
-                <User className="mr-2 h-4 w-4" />
-                Hồ sơ
-              </Link>
+            <DropdownMenuItem render={<Link href="/profile" />}>
+              <User className="mr-2 h-4 w-4" />
+              Hồ sơ
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/">
-                <Store className="mr-2 h-4 w-4" />
-                Quay về trang web
-              </Link>
+            <DropdownMenuItem render={<Link href="/" />}>
+              <Store className="mr-2 h-4 w-4" />
+              Quay về trang web
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
