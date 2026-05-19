@@ -10,11 +10,13 @@ import Link from "next/link";
 import Image from "next/image";
 
 export default function CheckoutPage() {
-  const { items, getTotalPrice, clearCart } = useCart();
+  const { items, getTotalPrice, clearCart, syncInventory } = useCart();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState("");
+  const [syncing, setSyncing] = useState(false);
+  const inventoryKey = items.map((item) => item.id).sort().join(",");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -27,12 +29,72 @@ export default function CheckoutPage() {
     }
   }, [mounted, items.length, router]);
 
+  useEffect(() => {
+    if (!mounted || items.length === 0) return;
+
+    const syncCheckoutInventory = async () => {
+      setSyncing(true);
+      try {
+        const params = new URLSearchParams({
+          ids: items.map((item) => item.id).join(","),
+          pageSize: String(items.length),
+        });
+        const res = await fetch(`/api/products?${params.toString()}`, {
+          cache: "no-store",
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          throw new Error(json.error || "Không thể kiểm tra tồn kho");
+        }
+
+        const products = Array.isArray(json.data) ? json.data : [];
+        syncInventory(
+          items.map((item) => {
+            const product = products.find((p: { id: string; stock: number }) => p.id === item.id);
+            return {
+              id: item.id,
+              stock: product?.stock ?? 0,
+            };
+          })
+        );
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Không thể kiểm tra tồn kho";
+        toast.error(message);
+      } finally {
+        setSyncing(false);
+      }
+    };
+
+    void syncCheckoutInventory();
+  }, [inventoryKey, mounted, syncInventory]);
+
   if (!mounted || items.length === 0) return null;
+
+  const hasUnavailableItems = items.some((item) => item.stock <= 0);
+  const hasInvalidQuantities = items.some((item) => item.quantity > item.stock);
+  const isCheckoutBlocked = syncing || hasUnavailableItems || hasInvalidQuantities;
+  const getStockMessage = (item: { stock?: number; quantity: number }) => {
+    if (typeof item.stock !== "number") {
+      return { text: "Đang kiểm tra tồn kho...", className: "text-muted-foreground" };
+    }
+    if (item.stock <= 0) {
+      return { text: "Đã hết hàng", className: "text-rose-500" };
+    }
+    if (item.quantity >= item.stock) {
+      return { text: `Chỉ còn ${item.stock} sản phẩm`, className: "text-amber-500" };
+    }
+    return { text: `Tồn kho hiện tại: ${item.stock}`, className: "text-muted-foreground" };
+  };
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!address) {
       toast.error("Vui lòng nhập địa chỉ giao hàng");
+      return;
+    }
+    if (isCheckoutBlocked) {
+      toast.error("Vui lòng cập nhật giỏ hàng theo tồn kho trước khi đặt hàng");
       return;
     }
 
@@ -126,24 +188,40 @@ export default function CheckoutPage() {
         <div className="animate-slide-right">
           <div className="glass-panel bento-card p-6 sticky top-24 rounded-2xl">
             <h2 className="text-lg font-semibold text-foreground mb-5">Đơn hàng của bạn</h2>
+            {syncing && (
+              <p className="mb-4 text-xs text-muted-foreground">
+                Đang kiểm tra tồn kho mới nhất...
+              </p>
+            )}
+            {(hasUnavailableItems || hasInvalidQuantities) && (
+              <div className="mb-4 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-500">
+                Một hoặc nhiều sản phẩm trong giỏ không còn đủ tồn kho. Vui lòng quay lại giỏ hàng để cập nhật.
+              </div>
+            )}
 
             <div className="space-y-3 mb-6 max-h-[40vh] overflow-y-auto pr-2">
-              {items.map((item) => (
-                <div key={item.id} className="flex gap-3 group">
-                  <div className="relative w-14 h-14 rounded-lg bg-muted/30 dark:bg-slate-800/50 overflow-hidden flex-shrink-0">
-                    {item.image && <Image src={item.image} alt={item.name} fill sizes="56px" className="object-cover" />}
-                  </div>
-                  <div className="flex-1 flex flex-col justify-center min-w-0">
-                    <h4 className="text-sm font-medium text-foreground truncate">{item.name}</h4>
-                    <div className="flex justify-between mt-0.5 text-sm">
-                      <span className="text-muted-foreground">×{item.quantity}</span>
-                      <span className="text-primary font-semibold">
-                        {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(item.price * item.quantity)}
-                      </span>
+              {items.map((item) => {
+                const stockMessage = getStockMessage(item);
+                return (
+                  <div key={item.id} className="flex gap-3 group">
+                    <div className="relative w-14 h-14 rounded-lg bg-muted/30 dark:bg-slate-800/50 overflow-hidden flex-shrink-0">
+                      {item.image && <Image src={item.image} alt={item.name} fill sizes="56px" className="object-cover" />}
+                    </div>
+                    <div className="flex-1 flex flex-col justify-center min-w-0">
+                      <h4 className="text-sm font-medium text-foreground truncate">{item.name}</h4>
+                      <div className="flex justify-between mt-0.5 text-sm">
+                        <span className="text-muted-foreground">×{item.quantity}</span>
+                        <span className="text-primary font-semibold">
+                          {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(item.price * item.quantity)}
+                        </span>
+                      </div>
+                      <p className={`mt-1 text-xs font-medium ${stockMessage.className}`}>
+                        {stockMessage.text}
+                      </p>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="border-t border-border pt-4 space-y-3 mb-6 text-sm">
@@ -166,8 +244,8 @@ export default function CheckoutPage() {
             <Button
               type="submit"
               form="checkout-form"
-              disabled={loading}
-              className="w-full h-12 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold shadow-xl shadow-violet-500/20 btn-glow transition-all"
+              disabled={loading || isCheckoutBlocked}
+              className="w-full h-12 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold shadow-xl shadow-violet-500/20 btn-glow transition-all disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 <>

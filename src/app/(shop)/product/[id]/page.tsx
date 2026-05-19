@@ -125,6 +125,7 @@ export default async function ProductDetailPage({
                 name: product.name,
                 price: product.price,
                 image: product.image,
+                stock: product.stock,
               }}
               disabled={product.stock <= 0}
             />
