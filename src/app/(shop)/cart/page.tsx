@@ -13,6 +13,7 @@ export default function CartPage() {
   const [mounted, setMounted] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const inventoryKey = items.map((item) => item.id).sort().join(",");
+  const itemCount = items.length;
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -20,14 +21,15 @@ export default function CartPage() {
   }, []);
 
   useEffect(() => {
-    if (!mounted || items.length === 0) return;
+    if (!mounted || itemCount === 0) return;
 
     const syncCartInventory = async () => {
+      const currentItems = useCart.getState().items;
       setSyncing(true);
       try {
         const params = new URLSearchParams({
-          ids: items.map((item) => item.id).join(","),
-          pageSize: String(items.length),
+          ids: currentItems.map((item) => item.id).join(","),
+          pageSize: String(currentItems.length),
         });
         const res = await fetch(`/api/products?${params.toString()}`, {
           cache: "no-store",
@@ -39,7 +41,7 @@ export default function CartPage() {
 
         const products = Array.isArray(json.data) ? json.data : [];
         syncInventory(
-          items.map((item) => {
+          currentItems.map((item) => {
             const product = products.find((p: { id: string; stock: number }) => p.id === item.id);
             return {
               id: item.id,
@@ -57,7 +59,7 @@ export default function CartPage() {
     };
 
     void syncCartInventory();
-  }, [inventoryKey, mounted, syncInventory]);
+  }, [inventoryKey, itemCount, mounted, syncInventory]);
 
   if (!mounted) return null;
 
